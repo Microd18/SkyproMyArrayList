@@ -1,18 +1,18 @@
 package Module;
 
+import Exceptions.ElementNotFoundException;
+import Exceptions.InvalidIndexException;
+import Exceptions.NullItemException;
 import Interfaces.StringList;
-
-import javax.management.AttributeNotFoundException;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class MyArrayList implements StringList {
-    public static int SIZE = 0;
+    public int SIZE = 0;
     private static final int DEFAULT_CAPACITY = 10;
     private String[] array;
 
 
-    MyArrayList() {
+    public MyArrayList() {
         array = new String[DEFAULT_CAPACITY];
     }
 
@@ -22,6 +22,8 @@ public class MyArrayList implements StringList {
 
     @Override
     public String add(String item) {
+        validateItem(item);
+
         if (array.length == SIZE) {
             grow();
         }
@@ -31,13 +33,17 @@ public class MyArrayList implements StringList {
 
     @Override
     public String add(int index, String item) {
-
-        if (index < 0 || index > SIZE)
-            throw new IndexOutOfBoundsException("Выход за пределы массива!");
+        validateIndex(index);
+        validateItem(item);
         if (array.length - 1 == SIZE) {
             grow();
         }
-        System.arraycopy(array, index,array, index + 1, SIZE - index );
+        if (index == SIZE) {
+            array[SIZE++] = item;
+            return item;
+        }
+
+        System.arraycopy(array, index, array, index + 1, SIZE - index);
 
         SIZE++;
 
@@ -47,35 +53,39 @@ public class MyArrayList implements StringList {
 
     @Override
     public String set(int index, String item) {
-        if (index < 0 || index > SIZE)
-            throw new IndexOutOfBoundsException("Выход за пределы массива!");
+        validateIndex(index);
+        validateItem(item);
         return array[index] = item;
     }
 
     @Override
     public String remove(String item) {
-        int i = 0;
-        String result;
 
-        for (; i < SIZE; i++) {
-            if (array[i].equals(item)) {
-                result = array[i];
-                System.arraycopy(array, i + 1 ,array, i, SIZE - i);
-                SIZE--;
-                return result;
-            }
+        validateItem(item);
+
+        int index = indexOf(item);
+
+        if (index == -1) {
+            throw new ElementNotFoundException();
         }
 
-        throw new RuntimeException("Элемент не найден");
+        System.arraycopy(array, index + 1, array, index, SIZE - index);
 
+        SIZE--;
+
+        return item;
     }
 
     @Override
     public String remove(int index) {
-        if (index < 0 || index > SIZE)
-            throw new IndexOutOfBoundsException("Выход за пределы массива!");
+        validateIndex(index);
+
         String result = array[index];
-        System.arraycopy(array, index + 1 ,array, index, SIZE - index);
+
+        System.arraycopy(array, index + 1, array, index, SIZE - index);
+
+        SIZE--;
+
         return result;
     }
 
@@ -114,14 +124,13 @@ public class MyArrayList implements StringList {
 
     @Override
     public String get(int index) {
-        if (index < 0 || index > SIZE)
-            throw new IndexOutOfBoundsException("Выход за пределы массива!");
+        validateIndex(index);
         return array[index];
     }
 
     @Override
     public boolean equals(StringList otherList) {
-        return false;
+        return Arrays.equals(this.toArray(), otherList.toArray());
     }
 
     @Override
@@ -136,12 +145,13 @@ public class MyArrayList implements StringList {
 
     @Override
     public void clear() {
+        SIZE = 0;
         Arrays.fill(array, null);
     }
 
     @Override
     public String[] toArray() {
-        return array;
+        return Arrays.copyOf(array, SIZE);
     }
 
     private Object[] grow() {
@@ -152,6 +162,17 @@ public class MyArrayList implements StringList {
     public String toString() {
         return "MyArrayList{" + Arrays.toString(array) +
                 '}';
+    }
+
+    public void validateIndex(int index) {
+        if (index < 0 || index > SIZE)
+            throw new InvalidIndexException();
+    }
+
+    public void validateItem(String item) {
+        if (item == null) {
+            throw new NullItemException();
+        }
     }
 
 }
